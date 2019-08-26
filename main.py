@@ -112,6 +112,9 @@ class Handler:
             logging.error(e)
             return web.Response(text=str(e), status=500)
 
+        if all_citizens_data == []:
+            return web.Response(text="no import_id: " + import_id + " in db", status=400)
+
         for index, elem in enumerate(all_citizens_data):
             all_citizens_data[index] = prepare_user_data_to_response_from_db(all_citizens_data[index])
 
@@ -134,7 +137,7 @@ class Handler:
             return web.Response(text=str(e), status=500)
 
         if all_citizens_data == []:
-            return web.Response(text="no import_id in db", status=400)
+            return web.Response(text="no import_id: " + import_id + " in db", status=400)
 
         citizens_birth_month_dict = {}
 
@@ -183,7 +186,7 @@ class Handler:
             return web.Response(text=str(e), status=500)
 
         if all_citizens_data == []:
-            return web.Response(text="no import_id in db", status=400)
+            return web.Response(text="no import_id: " + import_id + " in db", status=400)
 
         by_town_dict = {}
         for index, elem in enumerate(all_citizens_data):
