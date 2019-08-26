@@ -5,7 +5,7 @@ import asyncio
 from aiohttp import web
 
 from db.connector import connect_to_db
-from workers.db_workers.worker import save_import_in_db, user_by_id_and_citizen_id_exist_in_db, path_in_db
+from workers.db_workers.worker import save_import_in_db, user_by_id_and_citizen_id_exist_in_db, patch_in_db
 from workers.processing.import_data import validate_request_import, validate_request_patch
 
 
@@ -48,13 +48,11 @@ class Handler:
                 await save_import_in_db(self.db, request_data, import_id)
             except Exception as e:
                 logging.error(e)
-                return web.Response(status=500)
+                return web.Response(text=str(e), status=500)
         else:
             logging.info("not valid")
 
-            error_res = cause
-
-            return web.Response(text=cause, status=400, content_type="application/json")
+            return web.Response(text=cause, status=400)
 
         return web.Response(text=json.dumps(res), status=201, content_type="application/json")
 
@@ -62,7 +60,7 @@ class Handler:
         import_id = request.match_info.get('import_id', None)
         citizen_id = request.match_info.get('citizen_id', None)
 
-        logging.info("patch_imports_handler, import_id: ", import_id, ", citizen_id: ", citizen_id)
+        logging.info("patch_imports_handler, import_id: " + import_id + ", citizen_id: " + str(citizen_id))
 
         try:
             request_data = await request.json()
@@ -70,20 +68,24 @@ class Handler:
             logging.error(e)
             return web.Response(status=400)
 
-        if await user_by_id_and_citizen_id_exist_in_db(self.db, import_id, citizen_id):
-            logging.info("user not exist in db")
-            return web.Response(status=400)
+        # присутствует ли user в базе
+        if not (await user_by_id_and_citizen_id_exist_in_db(self.db, import_id, citizen_id)):
+            s = "import_id: " + import_id + ", citizen_id:" + citizen_id + " not exist in db"
+            logging.info(s)
+            return web.Response(text=s, status=400)
         else:
-            if validate_request_patch(request_data):
+            is_valid, cause = validate_request_patch(request_data, citizen_id)
+
+            if not(is_valid):
                 logging.info("not valid")
-                return web.Response(status=400)
+                return web.Response(text=cause, status=400)
+            else:
+                try:
+                    user_info = await patch_in_db(self.db, request_data, import_id)
 
-        try:
-            res = await path_in_db(self.db, request_data, import_id)
-
-            return web.Response(text=json.dumps(res), status=201, content_type="application/json")
-        except Exception as e:
-            return web.Response(status=500)
+                    return web.Response(text=json.dumps(user_info), status=200, content_type="application/json")
+                except Exception as e:
+                    return web.Response(text=str(e), status=500)
 
     async def get_all_citizens_handler(self, request):
         import_id = request.match_info.get('import_id', None)
@@ -141,6 +143,7 @@ def main():
         web.run_app(app)
     finally:
         if conn:
+            # todo: correct close
             conn.close()
             logging.info("conn.close")
 

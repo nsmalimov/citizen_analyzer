@@ -42,8 +42,109 @@ def validate_relations(relations_dict):
 
     return is_valid, len(set(all_relation_ids))
 
-def validate_request_patch(request_data):
-    return True
+
+def validate_request_patch(request_data, citizen_id):
+    correct_fields = ["name", "gender", "birth_date", "relatives", "town", "street", "building", "apartment"]
+
+    if len(request_data) == 0:
+        return False, "no one field in request"
+
+    res_validate_some_fields, cause, _ = validate_some_fields(request_data, correct_fields, citizen_id, None)
+
+    if not (res_validate_some_fields):
+        return False, cause
+
+    return True, ""
+
+
+def validate_some_fields(citizen, correct_fields, citizen_id, relations_dict, all):
+    for key in citizen:
+        if not (key in correct_fields):
+            return False, "unknown key, citizen_id: " + str(citizen_id), None
+
+    if "town" in citizen:
+        town = citizen["town"]
+
+        res, cause = check_str_req(town)
+        if not (res):
+            return False, "town " + cause + ", citizen_id: " + str(citizen_id), None
+    else:
+        return False, "no town key, citizen_id: " + str(citizen_id), None
+
+    if "street" in citizen:
+        street = citizen["street"]
+
+        res, cause = check_str_req(street)
+        if not (res):
+            return False, "street " + cause + ", citizen_id: " + str(citizen_id), None
+    else:
+        return False, "no street key, citizen_id: " + str(citizen_id)
+
+    if "building" in citizen:
+        building = citizen["building"]
+
+        res, cause = check_str_req(building)
+        if not (res):
+            return False, "building " + cause + ", citizen_id: " + str(citizen_id), None
+    else:
+        return False, "no building key, citizen_id: " + str(citizen_id), None
+
+    if "apartment" in citizen:
+        apartment = citizen["apartment"]
+
+        res, cause = check_int_req(apartment)
+        if not (res):
+            return False, "apartment " + cause + ", citizen_id: " + str(citizen_id), None
+    else:
+        return False, "no apartment key, citizen_id: " + str(citizen_id), None
+
+    if "name" in citizen:
+        name = citizen["name"]
+
+        if not (isinstance(name, str)) or len(name) == 0 or len(name) > 256:
+            return False, "name not str or not in [1,256], citizen_id: " + str(citizen_id), None
+    else:
+        return False, "no name key, citizen_id: " + str(citizen_id), None
+
+    if "birth_date" in citizen:
+        birth_date = citizen["birth_date"]
+
+        try:
+            dt = parser.parse(birth_date)
+
+            # todo: если родился сегодня, то валидно?
+            dt_now = datetime.today() - timedelta(days=1)
+
+            if dt >= dt_now:
+                return False, "birth_date >= then now date, citizen_id: " + str(citizen_id), None
+        except Exception as e:
+            return False, "birth_date not valid DD.MM.YYYY, error: " + str(e) + \
+                   ", citizen_id: " + str(citizen_id), None
+    else:
+        return False, "no town key, citizen_id: " + str(citizen_id), None
+
+    if "gender" in citizen:
+        gender = citizen["gender"]
+
+        if not (gender in ["male", "female"]):
+            return False, "gender not in [male, female], citizen_id: " + str(citizen_id), None
+    else:
+        return False, "no gender key, citizen_id: " + str(citizen_id), None
+
+    if "relatives" in citizen:
+        relatives = citizen["relatives"]
+
+        for i in relatives:
+            if not (isinstance(i, int)):
+                return False, "relatives not int, citizen_id: " + str(citizen_id), None
+
+        if not (relations_dict is None):
+            relations_dict[citizen_id] = relatives
+
+        return True, "", relations_dict
+    else:
+        return False, "no relatives key, citizen_id: " + str(citizen_id), None
+
 
 # todo: выдавать причину ошибки
 def validate_request_import(request_data):
@@ -69,95 +170,16 @@ def validate_request_import(request_data):
         else:
             return False, "no citizen_id key, citizen data: " + citizen
 
-        for key in citizen:
-            if not (key in correct_fields):
-                return False, "unknown key, citizen_id: " + str(citizen_id)
+        res_validate_some_fields, cause, relations_dict = \
+            validate_some_fields(citizen, correct_fields, citizen_id, relations_dict)
 
-        if "town" in citizen:
-            town = citizen["town"]
-
-            res, cause = check_str_req(town)
-            if not (res):
-                return False, "town " + cause + ", citizen_id: " + str(citizen_id)
-
-        else:
-            return False, "no town key, citizen_id: " + str(citizen_id)
-
-        if "street" in citizen:
-            street = citizen["street"]
-
-            res, cause = check_str_req(street)
-            if not (res):
-                return False, "street " + cause + ", citizen_id: " + str(citizen_id)
-        else:
-            return False, "no street key, citizen_id: " + str(citizen_id)
-
-        if "building" in citizen:
-            building = citizen["building"]
-
-            res, cause = check_str_req(building)
-            if not (res):
-                return False, "building " + cause + ", citizen_id: " + str(citizen_id)
-        else:
-            return False, "no building key, citizen_id: " + str(citizen_id)
-
-        if "apartment" in citizen:
-            apartment = citizen["apartment"]
-
-            res, cause = check_int_req(apartment)
-            if not (res):
-                return False, "apartment " + cause + ", citizen_id: " + str(citizen_id)
-        else:
-            return False, "no apartment key, citizen_id: " + str(citizen_id)
-
-        if "name" in citizen:
-            name = citizen["name"]
-
-            if not (isinstance(name, str)) or len(name) == 0 or len(name) > 256:
-                return False, "name not str or not in [1,256], citizen_id: " + str(citizen_id)
-        else:
-            return False, "no name key, citizen_id: " + str(citizen_id)
-
-        if "birth_date" in citizen:
-            birth_date = citizen["birth_date"]
-
-            try:
-                dt = parser.parse(birth_date)
-
-                # todo: если родился сегодня, то валидно?
-                dt_now = datetime.today() - timedelta(days=1)
-
-                if dt >= dt_now:
-                    return False, "birth_date >= then now date, citizen_id: " + str(citizen_id)
-            except Exception as e:
-                return False, "birth_date not valid DD.MM.YYYY, error: " + str(e) +\
-                       ", citizen_id: " + str(citizen_id)
-        else:
-            return False, "no town key, citizen_id: " + str(citizen_id)
-
-        if "gender" in citizen:
-            gender = citizen["gender"]
-
-            if not (gender in ["male", "female"]):
-                return False, "gender not in [male, female], citizen_id: " + str(citizen_id)
-        else:
-            return False, "no gender key, citizen_id: " + str(citizen_id)
-
-        if "relatives" in citizen:
-            relatives = citizen["relatives"]
-
-            for i in relatives:
-                if not (isinstance(i, int)):
-                    return False, "relatives not int, citizen_id: " + str(citizen_id)
-
-            relations_dict[citizen_id] = relatives
-        else:
-            return False, "no relatives key, citizen_id: " + str(citizen_id)
+        if not (res_validate_some_fields):
+            return False, cause
 
     is_relations_valid, count_relations = validate_relations(relations_dict)
 
-    if not(is_relations_valid):
-        return False, "relations data is not valid,"+ ", citizen_id: " + str(citizen_id)
+    if not (is_relations_valid):
+        return False, "relations data is not valid," + ", citizen_id: " + str(citizen_id)
 
     logging.info("count_relations: " + str(count_relations))
 

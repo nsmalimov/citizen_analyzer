@@ -12,13 +12,13 @@ def start():
 
     # change url if need
 
-    import_id = do_send_import(client)
+    import_id = do_send_import(client, "post")
 
     print ("import_id: ", import_id)
 
     # todo: check in db
 
-    do_patch_data(client, import_id)
+    do_patch_data(client, import_id, "patch")
 
     # todo: check in db
 
