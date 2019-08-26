@@ -1,8 +1,9 @@
-from tests.integrations.send_import.send_import_process import do_send_import
-from tests.integrations.patch_data.patch_data_process import do_patch_data
 from tests.client import Client
 from tests.integrations.all_citizens.get_all_citizens_process import do_get_all_citizens
 from tests.integrations.calc_stat.calc_stat_process import do_calc_stat
+from tests.integrations.patch_data.patch_data_process import do_patch_data
+from tests.integrations.send_import.send_import_process import do_send_import
+from tests.integrations.birthdays_gifts.birthdays_gifts import do_birthday_presents
 
 # todo: проверь, что там больше 256 может приехать (вдруг default = 255)
 
@@ -12,7 +13,7 @@ from tests.integrations.calc_stat.calc_stat_process import do_calc_stat
 def start():
     client = Client()
 
-    client.url = "http://84.201.129.208:8080"
+    # client.url = "http://84.201.129.208:8080"
 
     # change url if need
 
@@ -50,6 +51,19 @@ def start():
 
     for i in all_citizens:
         print(i)
+
+    print()
+
+    print("presents")
+
+    presents = do_birthday_presents(client, import_id, "get")
+
+    for i in presents:
+        print(i, presents[i])
+
+    print()
+
+    print("stats")
 
     stats = do_calc_stat(client, import_id, "get")
 

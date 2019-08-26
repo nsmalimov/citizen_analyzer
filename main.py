@@ -1,14 +1,16 @@
+import asyncio
 import json
 import logging
 import uuid
-import asyncio
+
+import numpy as np
 from aiohttp import web
 
 from db.connector import connect_to_db
 from workers.db_workers.worker import save_import_in_db, get_user_data_by_id_and_citizen_id, patch_in_db, \
     get_all_citizens_by_import_id, update_relations_data_in_db
 from workers.processing.import_data import validate_request_import, validate_request_patch
-from workers.util.util_funcs import prepare_user_data_to_response_from_db
+from workers.util.util_funcs import prepare_user_data_to_response_from_db, calc_age_by_birth_date
 
 
 class Handler:
@@ -81,7 +83,7 @@ class Handler:
 
                     # todo: упростить (без запроса, обмен в дикте)
                     user_info = await get_user_data_by_id_and_citizen_id(request.app.db_connect,
-                                                                            import_id, citizen_id)
+                                                                         import_id, citizen_id)
 
                     if "relatives" in request_data:
                         await update_relations_data_in_db(request.app.db_connect, import_id,
@@ -125,8 +127,48 @@ class Handler:
 
         logging.info("get_citizens_by_gifts_handler, import_id: " + import_id)
 
-        text = "ok"
-        return web.Response(text=text)
+        try:
+            all_citizens_data = await get_all_citizens_by_import_id(request.app.db_connect, import_id)
+        except Exception as e:
+            logging.error(e)
+            return web.Response(text=str(e), status=500)
+
+        if all_citizens_data == []:
+            return web.Response(text="no import_id in db", status=400)
+
+        citizens_birth_month_dict = {}
+
+        for i in all_citizens_data:
+            citizens_birth_month_dict[i["citizen_id"]] = i["birth_date"].month
+
+        months_dict = {}
+
+        for i in range(12):
+            months_dict[str(i + 1)] = []
+
+        for i in all_citizens_data:
+            citizen_data = dict(i)
+            for relate in citizen_data["relatives"]:
+                month_num = str(citizens_birth_month_dict[relate])
+
+                not_added = True
+
+                for index, j in enumerate(months_dict[month_num]):
+                    if j["citizen_id"] == citizen_data["citizen_id"]:
+                        months_dict[month_num][index]["presents"] += 1
+                        not_added = False
+
+                if not_added:
+                    months_dict[month_num].append({
+                        "citizen_id": citizen_data["citizen_id"],
+                        "presents": 1
+                    })
+
+        res = {
+            "data": months_dict
+        }
+
+        return web.Response(text=json.dumps(res), status=200, content_type="application/json")
 
     # optional
     async def get_stats_handler(self, request):
@@ -134,8 +176,41 @@ class Handler:
 
         logging.info("get_stats_handler, import_id: " + import_id)
 
-        text = "ok"
-        return web.Response(text=text)
+        try:
+            all_citizens_data = await get_all_citizens_by_import_id(request.app.db_connect, import_id)
+        except Exception as e:
+            logging.error(e)
+            return web.Response(text=str(e), status=500)
+
+        if all_citizens_data == []:
+            return web.Response(text="no import_id in db", status=400)
+
+        by_town_dict = {}
+        for index, elem in enumerate(all_citizens_data):
+            elem_updated = dict(elem)
+            town = elem_updated["town"]
+
+            age = calc_age_by_birth_date(elem_updated["birth_date"])
+
+            if town in by_town_dict:
+
+                by_town_dict[town].append(age)
+            else:
+                by_town_dict[town] = [age]
+
+        res = {
+            "data": []
+        }
+
+        for town in by_town_dict:
+            res["data"].append({
+                "town": town,
+                "p50": ("%.2f" % np.percentile(by_town_dict[town], 50)),
+                "p75": ("%.2f" % np.percentile(by_town_dict[town], 75)),
+                "p90": ("%.2f" % np.percentile(by_town_dict[town], 90)),
+            })
+
+        return web.Response(text=json.dumps(res), status=200, content_type="application/json")
 
 
 def init_app(log_level, db_connect):

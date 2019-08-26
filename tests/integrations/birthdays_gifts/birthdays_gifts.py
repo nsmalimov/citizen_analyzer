@@ -1,8 +1,8 @@
 from tests.client import Client
 
 
-def do_calc_stat(client, import_id, method_type):
-    url = "/imports/" + import_id + "/towns/stat/percentile/age"
+def do_birthday_presents(client, import_id, method_type):
+    url = "/imports/" + import_id + "/citizens/birthdays"
 
     res = client.do_request(url, None, method_type)
 
@@ -17,12 +17,12 @@ if __name__ == "__main__":
 
     # import_id = str(uuid.uuid4())
 
-    import_id = "4a545f62-b7a4-4782-bc92-9006e369038d"
+    import_id = "6b5ff45c-04fb-405f-b560-7d71f24f8611"
 
-    res = do_calc_stat(client, import_id, "get")
+    res = do_birthday_presents(client, import_id, "get")
 
     if res is None:
         exit()
 
     for i in res:
-        print(i)
+        print(i, res[i])

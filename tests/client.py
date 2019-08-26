@@ -1,6 +1,7 @@
-import aiohttp
 import asyncio
 import json
+
+import aiohttp
 
 
 class Client():
@@ -9,8 +10,11 @@ class Client():
     async def parse_result(self, response):
         if response.status == 400:
             return {
-                "cause": json.loads(await response.text()),
-                "status": response.status
+                "cause": await response.text(),
+                "status": response.status,
+                "result": {
+                    "data": None
+                }
             }
         else:
             return {
