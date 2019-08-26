@@ -5,8 +5,8 @@ import asyncio
 from aiohttp import web
 
 from db.connector import connect_to_db
-from workers.db_workers.worker import save_import_in_db, user_by_id_and_citizen_id_exist_in_db, patch_in_db, \
-    get_all_citizens_by_import_id
+from workers.db_workers.worker import save_import_in_db, get_user_data_by_id_and_citizen_id, patch_in_db, \
+    get_all_citizens_by_import_id, update_relations_data_in_db
 from workers.processing.import_data import validate_request_import, validate_request_patch
 from workers.util.util_funcs import prepare_user_data_to_response_from_db
 
@@ -63,8 +63,9 @@ class Handler:
             logging.error(e)
             return web.Response(status=400)
 
+        user_from_db = await get_user_data_by_id_and_citizen_id(request.app.db_connect, import_id, citizen_id)
         # присутствует ли user в базе
-        if await user_by_id_and_citizen_id_exist_in_db(request.app.db_connect, import_id, citizen_id) is None:
+        if user_from_db is None:
             s = "import_id: " + import_id + ", citizen_id:" + citizen_id + " not exist in db"
             logging.info(s)
             return web.Response(text=s, status=400)
@@ -79,8 +80,13 @@ class Handler:
                     await patch_in_db(request.app.db_connect, request_data, import_id, citizen_id)
 
                     # todo: упростить (без запроса, обмен в дикте)
-                    user_info = await user_by_id_and_citizen_id_exist_in_db(request.app.db_connect,
+                    user_info = await get_user_data_by_id_and_citizen_id(request.app.db_connect,
                                                                             import_id, citizen_id)
+
+                    if "relatives" in request_data:
+                        await update_relations_data_in_db(request.app.db_connect, import_id,
+                                                          user_from_db["relatives"], request_data["relatives"],
+                                                          citizen_id)
 
                     user_info = prepare_user_data_to_response_from_db(user_info)
 
@@ -111,13 +117,13 @@ class Handler:
             "data": all_citizens_data
         }
 
-        print (res)
-
         return web.Response(text=json.dumps(res), status=200, content_type="application/json")
 
     # optional
     async def get_citizens_by_gifts_handler(self, request):
         import_id = request.match_info.get("import_id", None)
+
+        logging.info("get_citizens_by_gifts_handler, import_id: " + import_id)
 
         text = "ok"
         return web.Response(text=text)
@@ -125,6 +131,8 @@ class Handler:
     # optional
     async def get_stats_handler(self, request):
         import_id = request.match_info.get("import_id", None)
+
+        logging.info("get_stats_handler, import_id: " + import_id)
 
         text = "ok"
         return web.Response(text=text)

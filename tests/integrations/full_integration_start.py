@@ -22,6 +22,15 @@ def start():
 
     print()
 
+    print("all_citizens")
+
+    all_citizens = do_get_all_citizens(client, import_id, "get")
+
+    for i in all_citizens:
+        print(i)
+
+    print()
+
     user_after_patched = do_patch_data(client, import_id, "patch")
 
     print("user_after_patched")
