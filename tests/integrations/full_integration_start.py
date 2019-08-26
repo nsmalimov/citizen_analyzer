@@ -1,8 +1,8 @@
 from tests.integrations.send_import.send_import_process import do_send_import
 from tests.integrations.patch_data.patch_data_process import do_patch_data
 from tests.client import Client
-from tests.integrations.all_citizens.get_all_citizens import do_get_all_citizens
-
+from tests.integrations.all_citizens.get_all_citizens_process import do_get_all_citizens
+from tests.integrations.calc_stat.calc_stat_process import do_calc_stat
 
 # todo: проверь, что там больше 256 может приехать (вдруг default = 255)
 
@@ -11,6 +11,8 @@ from tests.integrations.all_citizens.get_all_citizens import do_get_all_citizens
 
 def start():
     client = Client()
+
+    client.url = "http://84.201.129.208:8080"
 
     # change url if need
 
@@ -47,6 +49,11 @@ def start():
     print("all_citizens")
 
     for i in all_citizens:
+        print(i)
+
+    stats = do_calc_stat(client, import_id, "get")
+
+    for i in stats:
         print(i)
 
 

@@ -1,6 +1,6 @@
 from tests.integrations.patch_data.data_generator import gen_test_path_data_request_data
 from tests.client import Client
-from tests.integrations.all_citizens.get_all_citizens import do_get_all_citizens
+from tests.integrations.all_citizens.get_all_citizens_process import do_get_all_citizens
 
 
 def do_patch_data(client, import_id, method_type):
