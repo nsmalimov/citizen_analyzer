@@ -13,7 +13,7 @@ from tests.integrations.birthdays_gifts.birthdays_gifts import do_birthday_prese
 def start():
     client = Client()
 
-    # client.url = "http://84.201.129.208:8080"
+    client.url = "http://84.201.129.208:8080"
 
     # change url if need
 
