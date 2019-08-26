@@ -14,7 +14,7 @@ async def save_import_in_db(conn, import_data, import_id):
 
 async def user_by_id_and_citizen_id_exist_in_db(conn, import_id, citizen_id):
     import_data = await conn.fetchrow(
-        'SELECT * FROM imports_data WHERE import_id = $1 and citizen_id=$2', import_id, int(citizen_id))
+        "SELECT * FROM imports_data WHERE import_id = $1 and citizen_id=$2", import_id, int(citizen_id))
 
     logging.info("result from db [search user]: " + str(import_data))
 
@@ -38,8 +38,9 @@ async def patch_in_db(conn, patch_data, import_id, citizen_id):
 
         s = "UPDATE imports_data SET "
 
+
 async def get_all_citizens_by_import_id(conn, import_id):
-    all_citizens = await conn.fet(
-        'SELECT * FROM imports_data WHERE import_id = $1', import_id)
+    all_citizens = await conn.fetch(
+        "SELECT * FROM imports_data WHERE import_id = $1", import_id)
 
     return all_citizens

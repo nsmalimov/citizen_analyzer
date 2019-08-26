@@ -33,6 +33,9 @@ class Client():
         elif method_type == "patch":
             async with session.patch(self.url + url_path, data=data) as response:
                 return await self.parse_result(response)
+        elif method_type == "get":
+            async with session.get(self.url + url_path) as response:
+                return await self.parse_result(response)
         else:
             return "unknown method type"
 

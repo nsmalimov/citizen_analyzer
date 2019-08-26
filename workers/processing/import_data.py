@@ -11,7 +11,7 @@ def check_str_req(str_to_check):
     if len(str_to_check) > 256 or len(str_to_check) == 0:
         return False, "no in [1, 256]"
 
-    if re.search('[a-zA-Zа-яА-Я]', str_to_check) is None and (re.search('[0-9]', str_to_check) is None):
+    if re.search("[a-zA-Zа-яА-Я]", str_to_check) is None and (re.search('[0-9]', str_to_check) is None):
         return False, "no one digit or a-zA-Z"
 
     return True, ""

@@ -47,3 +47,6 @@ python3 -m venv env
 install supervisord
 
 init supervisor
+
+todo:
+проверить, что стартует при ребуте

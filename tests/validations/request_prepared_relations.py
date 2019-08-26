@@ -52,5 +52,5 @@ class TestValidators(unittest.TestCase):
             self.assertEqual(count_relations, test_case["count_relations"], test_case)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

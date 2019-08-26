@@ -1,12 +1,13 @@
 from tests.client import Client
+import json
 
 
 def do_get_all_citizens(client, import_id, method_type):
-    urls = [
-        "/imports/" + import_id + "/citizens"
-    ]
+    url = "/imports/" + import_id + "/citizens"
 
-    client.do_request(urls[0], None, method_type)
+    res = client.do_request(url, None, method_type)
+
+    return res
 
 
 if __name__ == "__main__":
@@ -16,4 +17,11 @@ if __name__ == "__main__":
 
     import_id = "2f66b20a-91fb-4e9a-94b4-214e5a5557ce"
 
-    do_get_all_citizens(client, import_id, "get")
+    res = do_get_all_citizens(client, import_id, "get")
+
+    print (res)
+
+    res = json.loads(res)
+
+    for i in res["result"]["data"]:
+        print(i)

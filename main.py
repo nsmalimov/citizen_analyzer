@@ -59,8 +59,8 @@ class Handler:
         return web.Response(text=json.dumps(res), status=201, content_type="application/json")
 
     async def patch_imports_handler(self, request):
-        import_id = request.match_info.get('import_id', None)
-        citizen_id = request.match_info.get('citizen_id', None)
+        import_id = request.match_info.get("import_id", None)
+        citizen_id = request.match_info.get("citizen_id", None)
 
         logging.info("patch_imports_handler, import_id: " + import_id + ", citizen_id: " + str(citizen_id))
 
@@ -100,7 +100,9 @@ class Handler:
                     return web.Response(text=str(e), status=500)
 
     async def get_all_citizens_handler(self, request):
-        import_id = request.match_info.get('import_id', None)
+        import_id = request.match_info.get("import_id", None)
+
+        logging.info("get_all_citizens_handler, import_id: " + import_id)
 
         try:
             all_citizens_data = await get_all_citizens_by_import_id(self.db, import_id)
@@ -119,40 +121,42 @@ class Handler:
 
     # optional
     async def get_citizens_by_gifts_handler(self, request):
-        import_id = request.match_info.get('import_id', None)
+        import_id = request.match_info.get("import_id", None)
 
         text = "ok"
         return web.Response(text=text)
 
     # optional
     async def get_stats_handler(self, request):
-        import_id = request.match_info.get('import_id', None)
+        import_id = request.match_info.get("import_id", None)
 
         text = "ok"
         return web.Response(text=text)
 
 
-def init_app(log_level, conn):
+def init_app(log_level, db_connect):
     app = web.Application()
 
     hanlder = Handler()
-    hanlder.db = conn
+    hanlder.db = db_connect
 
     logging.basicConfig(level=log_level)
 
-    app.add_routes([web.get('/', hanlder.handle),
+    app.add_routes([web.get("/", hanlder.handle),
 
-                    web.post('/imports', hanlder.post_imports_handler),
+                    web.post("/imports", hanlder.post_imports_handler),
 
-                    web.patch('/imports/{import_id}/citizens/{citizen_id}', hanlder.patch_imports_handler),
+                    web.patch("/imports/{import_id}/citizens/{citizen_id}", hanlder.patch_imports_handler),
 
-                    web.get('/imports/{import_id}/citizens', hanlder.get_all_citizens_handler),
+                    web.get("/imports/{import_id}/citizens", hanlder.get_all_citizens_handler),
 
-                    web.get('/imports/{import_id}/citizens/birthdays', hanlder.get_citizens_by_gifts_handler),
+                    web.get("/imports/{import_id}/citizens/birthdays", hanlder.get_citizens_by_gifts_handler),
 
-                    web.get('/imports/{import_id}/towns/stat/percentile/age', hanlder.get_stats_handler)])
+                    web.get("/imports/{import_id}/towns/stat/percentile/age", hanlder.get_stats_handler)])
 
-    return app, conn
+    app.db_connect = hanlder.db
+
+    return app
 
 
 async def on_shutdown(app):
@@ -167,8 +171,8 @@ def main():
     loop = asyncio.get_event_loop()
     db_connection = loop.run_until_complete(connect_to_db(db_host))
 
-    app, conn = init_app(log_level, db_connection)
-    app.db_connect = db_connection
+    app = init_app(log_level, db_connection)
+
     app.on_shutdown.append(on_shutdown)
     web.run_app(app)
 
