@@ -9,14 +9,14 @@ class Client():
     async def parse_result(self, response):
         if response.status == 400:
             return {
-                "cause": await response.text(),
+                "cause": json.loads(await response.text()),
                 "status": response.status
             }
         else:
             return {
                 "cause": None,
                 "status": response.status,
-                "result": await response.text(),
+                "result": json.loads(await response.text()),
             }
 
     def do_request(self, url, data, method_type):

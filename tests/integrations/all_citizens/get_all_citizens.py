@@ -1,5 +1,4 @@
 from tests.client import Client
-import json
 
 
 def do_get_all_citizens(client, import_id, method_type):
@@ -7,7 +6,7 @@ def do_get_all_citizens(client, import_id, method_type):
 
     res = client.do_request(url, None, method_type)
 
-    return res
+    return res["result"]["data"]
 
 
 if __name__ == "__main__":
@@ -19,9 +18,5 @@ if __name__ == "__main__":
 
     res = do_get_all_citizens(client, import_id, "get")
 
-    print (res)
-
-    res = json.loads(res)
-
-    for i in res["result"]["data"]:
+    for i in res:
         print(i)

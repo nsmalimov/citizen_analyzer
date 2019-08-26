@@ -12,13 +12,6 @@ from workers.util.util_funcs import prepare_user_data_to_response_from_db
 
 
 class Handler:
-    db = None
-
-    def __init__(self):
-        pass
-
-    # todo: выдавать причину ошибки
-
     async def handle(self, request):
         logging.info("handle")
 
@@ -47,7 +40,7 @@ class Handler:
             logging.info("valid")
 
             try:
-                await save_import_in_db(self.db, request_data, import_id)
+                await save_import_in_db(request.app.db_connect, request_data, import_id)
             except Exception as e:
                 logging.error(e)
                 return web.Response(text=str(e), status=500)
@@ -71,7 +64,7 @@ class Handler:
             return web.Response(status=400)
 
         # присутствует ли user в базе
-        if await user_by_id_and_citizen_id_exist_in_db(self.db, import_id, citizen_id) is None:
+        if await user_by_id_and_citizen_id_exist_in_db(request.app.db_connect, import_id, citizen_id) is None:
             s = "import_id: " + import_id + ", citizen_id:" + citizen_id + " not exist in db"
             logging.info(s)
             return web.Response(text=s, status=400)
@@ -83,10 +76,11 @@ class Handler:
                 return web.Response(text=cause, status=400)
             else:
                 try:
-                    await patch_in_db(self.db, request_data, import_id, citizen_id)
+                    await patch_in_db(request.app.db_connect, request_data, import_id, citizen_id)
 
                     # todo: упростить (без запроса, обмен в дикте)
-                    user_info = await user_by_id_and_citizen_id_exist_in_db(self.db, import_id, citizen_id)
+                    user_info = await user_by_id_and_citizen_id_exist_in_db(request.app.db_connect,
+                                                                            import_id, citizen_id)
 
                     user_info = prepare_user_data_to_response_from_db(user_info)
 
@@ -105,7 +99,7 @@ class Handler:
         logging.info("get_all_citizens_handler, import_id: " + import_id)
 
         try:
-            all_citizens_data = await get_all_citizens_by_import_id(self.db, import_id)
+            all_citizens_data = await get_all_citizens_by_import_id(request.app.db_connect, import_id)
         except Exception as e:
             logging.error(e)
             return web.Response(text=str(e), status=500)
@@ -116,6 +110,8 @@ class Handler:
         res = {
             "data": all_citizens_data
         }
+
+        print (res)
 
         return web.Response(text=json.dumps(res), status=200, content_type="application/json")
 

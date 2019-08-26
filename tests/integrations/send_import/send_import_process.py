@@ -1,6 +1,6 @@
-from tests.send_import.data_generator import gen_test_import_send_request_data
+from tests.integrations.send_import.data_generator import gen_test_import_send_request_data
 from tests.client import Client
-import json
+
 
 def do_send_import(client, method_type):
     request_data = gen_test_import_send_request_data()
@@ -10,11 +10,13 @@ def do_send_import(client, method_type):
     res = client.do_request(request_data["url"], request_data["request"], method_type)
 
     if res["status"] == 201:
-        res = json.loads(res["result"])
+        res = res["result"]
         return res["data"]["import_id"]
 
 
 if __name__ == "__main__":
     client = Client()
 
-    do_send_import(client, "post")
+    res = do_send_import(client, "post")
+
+    print(res)
