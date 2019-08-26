@@ -49,7 +49,7 @@ def validate_request_patch(request_data, citizen_id):
     if len(request_data) == 0:
         return False, "no one field in request"
 
-    res_validate_some_fields, cause, _ = validate_some_fields(request_data, correct_fields, citizen_id, None)
+    res_validate_some_fields, cause, _ = validate_some_fields(request_data, correct_fields, citizen_id, None, False)
 
     if not (res_validate_some_fields):
         return False, cause
@@ -57,7 +57,7 @@ def validate_request_patch(request_data, citizen_id):
     return True, ""
 
 
-def validate_some_fields(citizen, correct_fields, citizen_id, relations_dict, all):
+def validate_some_fields(citizen, correct_fields, citizen_id, relations_dict, all_should_be):
     for key in citizen:
         if not (key in correct_fields):
             return False, "unknown key, citizen_id: " + str(citizen_id), None
@@ -68,7 +68,7 @@ def validate_some_fields(citizen, correct_fields, citizen_id, relations_dict, al
         res, cause = check_str_req(town)
         if not (res):
             return False, "town " + cause + ", citizen_id: " + str(citizen_id), None
-    else:
+    elif all_should_be:
         return False, "no town key, citizen_id: " + str(citizen_id), None
 
     if "street" in citizen:
@@ -77,7 +77,7 @@ def validate_some_fields(citizen, correct_fields, citizen_id, relations_dict, al
         res, cause = check_str_req(street)
         if not (res):
             return False, "street " + cause + ", citizen_id: " + str(citizen_id), None
-    else:
+    elif all_should_be:
         return False, "no street key, citizen_id: " + str(citizen_id)
 
     if "building" in citizen:
@@ -86,7 +86,7 @@ def validate_some_fields(citizen, correct_fields, citizen_id, relations_dict, al
         res, cause = check_str_req(building)
         if not (res):
             return False, "building " + cause + ", citizen_id: " + str(citizen_id), None
-    else:
+    elif all_should_be:
         return False, "no building key, citizen_id: " + str(citizen_id), None
 
     if "apartment" in citizen:
@@ -95,7 +95,7 @@ def validate_some_fields(citizen, correct_fields, citizen_id, relations_dict, al
         res, cause = check_int_req(apartment)
         if not (res):
             return False, "apartment " + cause + ", citizen_id: " + str(citizen_id), None
-    else:
+    elif all_should_be:
         return False, "no apartment key, citizen_id: " + str(citizen_id), None
 
     if "name" in citizen:
@@ -103,7 +103,7 @@ def validate_some_fields(citizen, correct_fields, citizen_id, relations_dict, al
 
         if not (isinstance(name, str)) or len(name) == 0 or len(name) > 256:
             return False, "name not str or not in [1,256], citizen_id: " + str(citizen_id), None
-    else:
+    elif all_should_be:
         return False, "no name key, citizen_id: " + str(citizen_id), None
 
     if "birth_date" in citizen:
@@ -120,7 +120,7 @@ def validate_some_fields(citizen, correct_fields, citizen_id, relations_dict, al
         except Exception as e:
             return False, "birth_date not valid DD.MM.YYYY, error: " + str(e) + \
                    ", citizen_id: " + str(citizen_id), None
-    else:
+    elif all_should_be:
         return False, "no town key, citizen_id: " + str(citizen_id), None
 
     if "gender" in citizen:
@@ -128,7 +128,7 @@ def validate_some_fields(citizen, correct_fields, citizen_id, relations_dict, al
 
         if not (gender in ["male", "female"]):
             return False, "gender not in [male, female], citizen_id: " + str(citizen_id), None
-    else:
+    elif all_should_be:
         return False, "no gender key, citizen_id: " + str(citizen_id), None
 
     if "relatives" in citizen:
@@ -142,7 +142,7 @@ def validate_some_fields(citizen, correct_fields, citizen_id, relations_dict, al
             relations_dict[citizen_id] = relatives
 
         return True, "", relations_dict
-    else:
+    elif all_should_be:
         return False, "no relatives key, citizen_id: " + str(citizen_id), None
 
 
@@ -171,7 +171,7 @@ def validate_request_import(request_data):
             return False, "no citizen_id key, citizen data: " + citizen
 
         res_validate_some_fields, cause, relations_dict = \
-            validate_some_fields(citizen, correct_fields, citizen_id, relations_dict)
+            validate_some_fields(citizen, correct_fields, citizen_id, relations_dict, True)
 
         if not (res_validate_some_fields):
             return False, cause

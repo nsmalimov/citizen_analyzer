@@ -1,5 +1,4 @@
 from tests.patch_data.data_generator import gen_test_path_data_request_data
-import uuid
 from tests.client import Client
 import uuid
 

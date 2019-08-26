@@ -5,8 +5,10 @@ import asyncio
 from aiohttp import web
 
 from db.connector import connect_to_db
-from workers.db_workers.worker import save_import_in_db, user_by_id_and_citizen_id_exist_in_db, patch_in_db
+from workers.db_workers.worker import save_import_in_db, user_by_id_and_citizen_id_exist_in_db, patch_in_db, \
+    get_all_citizens_by_import_id
 from workers.processing.import_data import validate_request_import, validate_request_patch
+from workers.util.util_funcs import prepare_user_data_to_response_from_db
 
 
 class Handler:
@@ -69,36 +71,60 @@ class Handler:
             return web.Response(status=400)
 
         # присутствует ли user в базе
-        if not (await user_by_id_and_citizen_id_exist_in_db(self.db, import_id, citizen_id)):
+        if await user_by_id_and_citizen_id_exist_in_db(self.db, import_id, citizen_id) is None:
             s = "import_id: " + import_id + ", citizen_id:" + citizen_id + " not exist in db"
             logging.info(s)
             return web.Response(text=s, status=400)
         else:
             is_valid, cause = validate_request_patch(request_data, citizen_id)
 
-            if not(is_valid):
+            if not (is_valid):
                 logging.info("not valid")
                 return web.Response(text=cause, status=400)
             else:
                 try:
-                    user_info = await patch_in_db(self.db, request_data, import_id)
+                    await patch_in_db(self.db, request_data, import_id, citizen_id)
 
-                    return web.Response(text=json.dumps(user_info), status=200, content_type="application/json")
+                    # todo: упростить (без запроса, обмен в дикте)
+                    user_info = await user_by_id_and_citizen_id_exist_in_db(self.db, import_id, citizen_id)
+
+                    user_info = prepare_user_data_to_response_from_db(user_info)
+
+                    res = {
+                        "data": user_info
+                    }
+
+                    return web.Response(text=json.dumps(res), status=200, content_type="application/json")
                 except Exception as e:
+                    logging.error(e)
                     return web.Response(text=str(e), status=500)
 
     async def get_all_citizens_handler(self, request):
         import_id = request.match_info.get('import_id', None)
 
-        text = "ok"
-        return web.Response(text=text)
+        try:
+            all_citizens_data = await get_all_citizens_by_import_id(self.db, import_id)
+        except Exception as e:
+            logging.error(e)
+            return web.Response(text=str(e), status=500)
 
+        for index, elem in enumerate(all_citizens_data):
+            all_citizens_data[index] = prepare_user_data_to_response_from_db(all_citizens_data[index])
+
+        res = {
+            "data": all_citizens_data
+        }
+
+        return web.Response(text=json.dumps(res), status=200, content_type="application/json")
+
+    # optional
     async def get_citizens_by_gifts_handler(self, request):
         import_id = request.match_info.get('import_id', None)
 
         text = "ok"
         return web.Response(text=text)
 
+    # optional
     async def get_stats_handler(self, request):
         import_id = request.match_info.get('import_id', None)
 
@@ -129,23 +155,22 @@ def init_app(log_level, conn):
     return app, conn
 
 
-def main():
-    conn = None
+async def on_shutdown(app):
+    logging.info("on_shutdown")
+    await app.db_connect.close()
 
+
+def main():
     db_host = "84.201.129.208"
     log_level = logging.INFO
 
     loop = asyncio.get_event_loop()
-    res = loop.run_until_complete(connect_to_db(db_host))
+    db_connection = loop.run_until_complete(connect_to_db(db_host))
 
-    try:
-        app, conn = init_app(log_level, res)
-        web.run_app(app)
-    finally:
-        if conn:
-            # todo: correct close
-            conn.close()
-            logging.info("conn.close")
+    app, conn = init_app(log_level, db_connection)
+    app.db_connect = db_connection
+    app.on_shutdown.append(on_shutdown)
+    web.run_app(app)
 
 
 if __name__ == "__main__":

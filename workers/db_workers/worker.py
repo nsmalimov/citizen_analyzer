@@ -18,10 +18,28 @@ async def user_by_id_and_citizen_id_exist_in_db(conn, import_id, citizen_id):
 
     logging.info("result from db [search user]: " + str(import_data))
 
-    return import_data != None
+    return import_data
 
 
-async def patch_in_db(conn, patch_data, import_id):
-    res = None
+async def patch_in_db(conn, patch_data, import_id, citizen_id):
+    s = "UPDATE imports_data SET "
 
-    return res
+    # todo: без цикла?
+    # https://magicstack.github.io/asyncpg/current/api/index.html
+    for i in patch_data:
+        key = i
+        if i == "name":
+            key = "citizen_name"
+
+        s += key + "=$3 "
+        s += " WHERE import_id=$1 and citizen_id=$2"
+
+        await conn.execute(s, import_id, int(citizen_id), patch_data[i])
+
+        s = "UPDATE imports_data SET "
+
+async def get_all_citizens_by_import_id(conn, import_id):
+    all_citizens = await conn.fet(
+        'SELECT * FROM imports_data WHERE import_id = $1', import_id)
+
+    return all_citizens
