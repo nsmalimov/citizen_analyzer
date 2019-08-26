@@ -14,11 +14,14 @@ def do_patch_data(client, import_id, method_type):
         all_citizens = do_get_all_citizens(client, import_id, "get")
 
         for i in all_citizens:
-            print (i)
+           print (i)
 
         print()
 
         results.append(res)
+
+        for index, elem in enumerate(results):
+            print("result == correct_response: ", elem["result"] == results[index]["result"])
 
     return results
 
@@ -28,7 +31,7 @@ if __name__ == "__main__":
 
     # import_id = str(uuid.uuid4())
 
-    import_id = "2f66b20a-91fb-4e9a-94b4-214e5a5557ce"
+    import_id = "6b5ff45c-04fb-405f-b560-7d71f24f8611"
 
     results = do_patch_data(client, import_id, "patch")
 

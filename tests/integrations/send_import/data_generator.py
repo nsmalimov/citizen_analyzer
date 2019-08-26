@@ -36,12 +36,6 @@ def gen_test_import_send_request_data():
                     "relatives": []
                 }
             ]
-        },
-        "url": "/imports",
-        "result": {
-            "data": {
-                "import_id": "uuid"
-            }
         }
     }]
 

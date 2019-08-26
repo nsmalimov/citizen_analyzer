@@ -7,7 +7,7 @@ def do_send_import(client, method_type):
 
     request_data = request_data[0]
 
-    res = client.do_request(request_data["url"], request_data["request"], method_type)
+    res = client.do_request("/imports", request_data["request"], method_type)
 
     if res["status"] == 201:
         res = res["result"]
